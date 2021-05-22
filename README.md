@@ -3,6 +3,7 @@
 此项目为生物计算编程2021春季学期大作业
 
 group_index：6
+
 contributors：马睿锋、阿克卓力、白杰
 
 ## 一、项目介绍
@@ -66,6 +67,7 @@ contributors：马睿锋、阿克卓力、白杰
 [1] Muhammad Sardaraza, Muhammad Tahirb, Ataul AzizIkramc, Hassan Bajwad ,"SeqCompress:
 An algorithm for biological sequence compression",Genomics,Volume 104, Issue 4,Pages 225-
 228,October 2014https://doi.org/10.1016/j.ygeno.2014.08.007
+
 [2] Pamela Vinitha Eric, Gopakumar Gopalakrishnan, Muralikrishnan Karunakaran, "An Optimal
 Seed Based Compression Algorithm for DNA Sequences", Advances in Bioinformatics, vol. 2016,
 Article ID 3528406, 7 pages, 2016. https://doi.org/10.1155/2016/3528406

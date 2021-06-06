@@ -61,3 +61,4 @@ struct node* insert_node(struct node *list,struct node *new_node);
 // 输出链表
 // 参数list：目标链表
 void print_list(struct node *list);
+

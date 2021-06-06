@@ -448,8 +448,8 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
   if ((s = argv[1], s[1] || strpbrk(s, "DEde") == NULL)
-   || (s = argv[2], (sou_file  = fopen(s, "rb")) == NULL)
-   || (s = argv[3], (des_file = fopen(s, "wb")) == NULL)) {
+   || (s = argv[2], (sou_file  = fopen(s, "rb+")) == NULL)
+   || (s = argv[3], (des_file = fopen(s, "wb+")) == NULL)) {
     printf("??? %s\n", s);  return EXIT_FAILURE;
   }
 

@@ -32,7 +32,7 @@ int main (int argc, char *argv[])
 
 
     // 打开目标文件
-    FILE* des_file=fopen(argv[3],"w");
+    FILE* des_file=fopen(argv[3],"w+");
 	struct node *list=NULL;
     if(!des_file)
     {

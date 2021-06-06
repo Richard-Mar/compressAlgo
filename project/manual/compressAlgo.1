@@ -1,0 +1,68 @@
+.TH "compressAlgo" "1" "June 2021" "compressAlgo 1.0.0" ""
+.SH NAME
+.PP
+compressAlgo \- a set of designed lossless algorithms from following
+choices, and compare their compression rates for a set of data
+.SH SYNOPSIS
+.PP
+\f[B]lz77\f[] \f[B]huffman\f[] \f[B]seqcompress\f[]
+\f[B]optimalseedbasedcompression\f[] [uncompressedseq file]..
+[compressedseq file]..
+.PP
+\f[B]file_IO\f[] the source code for file reading
+.SH DESCRIPTION
+.SS lz77
+.PP
+Compression:for example, one by one through each string, if the current
+dictionary list has not the character, the character will add to the
+dictionary, key for the characters, the value of the generator returned
+by the Numbers, if you have the current character, continued to join
+next character, which is composed of two characters in the string,
+whether the string in the dictionary, if in,Then proceed to add the next
+character to form a new string, or if not, add the string to the
+dictionary.The resulting output string is a dictionary value that
+replaces the string plus the trailing character.
+.SS seqcompress
+.PP
+It is mainly to make a decision comparison between two compression
+methods based on segment compression and binary compression, choose a
+better processing method to process the fragmented data, and finally
+achieve the most global compression.
+Based on statistical models and arithmetic coding.
+The statistical model is to find a better compression ratio in the
+sub\-segment than the binary 0 compression method, and decide whether to
+use segment\-based compression or binary compression.
+Arithmetic coding is used to encode various segments found in
+statistics, and to encode the remaining nucleotide bases.
+.SS huffman
+.PP
+The code with more occurrences is shorter, and the code with less
+occurrences is longer.
+In this way, overall, the total number of bits required is reduced.
+But when most of the characters appear at the same frequency, the
+compression rate of huffman compression will be very low.
+.SS optimal seed based compression
+.PP
+Matches backwards through the set seed, and expands the matched string
+to both sides, and finally identifies all important exact and
+approximate repetitions in the DNA sequence and stores them in the
+offline dictionary.
+All of the approximate repetitions have mismatches, and these mismatches
+are encoded and written into the offline dictionary.
+Mismatches occur due to mutations and can be defined by any editing
+operations, such as insertion, deletion, or substitution of certain
+bases.
+The detailed information of the mismatch is recorded in the table as a
+triple, which is the mismatch position in the extended seed, the type of
+editing operation, and the symbol to be inserted or replaced.
+.SH COPYRIGHT
+.PP
+Copyright © 马睿锋、白杰、阿克卓力 Version 1.0.0
+<https://doi.org/10.1016/j.ygeno.2014.08.007>
+<https://doi.org/10.1155/2016/3528406>
+.PD 0
+.P
+.PD
+<https://zhuanlan.zhihu.com/p/220384402>
+.SH AUTHORS
+马睿锋、白杰、阿克卓力.

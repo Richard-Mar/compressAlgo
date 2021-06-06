@@ -1,5 +1,70 @@
-#include "final_huffman.h"
+#ifndef BIN_COMPRESS_H
+#define BIN_COMPRESS_H
+/*二进制编码
+	基于huffman编码的二进制压缩
+*/
 #define MAX_CODE_LENGTH 260// 符号表最大只能有256个节点
+#endif 
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#define MAX_CODE_LENGTH 260// 符号表最大只能有256个节点
+struct node
+{
+    char code[MAX_CODE_LENGTH];
+        // 字符串形式存储的Huffman编码
+        
+    long count;
+        // 这个字符在文件中出现的次数
+        
+    int checked;
+        // 在生成Huffman树的时候是否已经被当作叶子节点
+        
+    char sym;
+        // 符号
+    struct node* next,*left,*right;// left和right只在生成Huffman树的时候有用
+};
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 函数原型
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 压缩相关
+struct node* generate_count(FILE*,struct node*);
+struct node* generate_tree(struct node*);
+void generate_code(struct node*list);
+struct node* free_tree(struct node*list);
+void generate_des_file(FILE*,FILE*,struct node*);
+// 解压相关
+struct node* de_get_sym_list(FILE*);
+void de_generate_des_file(FILE*,FILE*,struct node*);
+// 辅助函数
+
+// 在链表中查找指定的字符
+// 参数：符号表
+// 参数：字符
+// 返回值：找到的节点的指针
+struct node* content_char(struct node*,char);
+
+// 在链表中查找指定编码
+// 参数：符号表
+// 参数：编码
+// 返回值：找到的节点的指针
+struct node* content_code(struct node* list,const char* ch);
+
+// 根据字符创建一个新的节点
+// 参数：字符
+// 参数：计数
+// 返回值：新节点指针
+struct node* create_new_node(char ch,int count);
+
+// 插入新节点到符号表的最前面
+// 参数list：目标链表
+// 参数new_node：新节点
+// 返回值：插入后的链表
+struct node* insert_node(struct node *list,struct node *new_node);
+
+// 输出链表
+// 参数list：目标链表
+void print_list(struct node *list);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // 全局变量
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,72 +80,7 @@ int gl_source_file_length = 0;// 源文件的总长度
 // 返回值：第一个未检查的最少出现次数的结点指针
 struct node* get_smallest_node(struct node *list_addr);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// main函数
-///////////////////////////////////////////////////////////////////////////////////////////////////
-int main(int argc,char** argv)
-{
-    // 传的参数一定是四个：可执行程序 源文件 操作符 目标文件
-    if(argc != 4)
-    {
-        printf("usage: source_file op des_file\nop:c:compress\td:decompress\n");
-        exit(0);
-    }
-    // 打开源文件
-    FILE* source_file=fopen(argv[1],"rb");
-    if(!source_file)
-    {
-        printf("cannot open source file.\n");
-        exit(0);
-    }
-    // 获取文件长度，以实现进度条
-    fseek(source_file,0,SEEK_END);
-    gl_source_file_length = ftell(source_file);
-    fseek(source_file,0,SEEK_SET);
-    // 打开目标文件
-    FILE* des_file=fopen(argv[3],"wb");
-    if(!des_file)
-    {
-        printf("cannot open des file.\n");
-        exit(0);
-    }
-    
-    // 获取操作符
-    struct node *list=NULL;
-    char op;
-	op = argv[2][0];
-    if(op!='c' && op!='d')
-    {
-        printf("usage: source_file op des_file\nop:c:compress\td:decompress\n");
-        exit(0);
-    }
-    // 压缩
-    else if(op=='c')
-    {
-        list=generate_count(source_file,list);
-        list=generate_tree(list);
-        generate_code(list);
-        list=free_tree(list);
-        generate_des_file(source_file,des_file,list);
-    }
-    // 解压
-    else if(op=='d')
-    {
-        list=de_get_sym_list(source_file);
-        de_generate_des_file(source_file,des_file,list);
-    }
-    
-    // 关闭文件
-    if(fclose(source_file))
-    {
-        printf("cannot close source file!\n");
-        exit(0);
-    }
-    if(fclose(des_file))
-    {
-        printf("cannot close des file!\n");
-        exit(0);
-    }
-}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // 压缩的相关函数
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,10 +95,7 @@ struct node* generate_count(FILE* f,struct node*list)
     struct node *content_node;
     while(fread(&ch,sizeof(char),1,f)==1)
     {
-        // 进度条
-        count++;
-        if(count%(gl_source_file_length/10+1)==0)
-            printf(".");
+
         // 插入符号表
         content_node = content_char(list,ch);
         if(content_node)
@@ -109,7 +106,6 @@ struct node* generate_count(FILE* f,struct node*list)
             list=insert_node(list,create_new_node(ch,1));
         }
     }
-    printf("\n");
     return list;
 }
 // 生成Huffman树
@@ -117,13 +113,9 @@ struct node* generate_count(FILE* f,struct node*list)
 // 返回值：含有Huffman树的链表，非叶节点将插入到链表前面，并有左右孩子属性，叶节点没有左右孩子属性
 struct node* generate_tree(struct node* list)
 {
-    printf("generate_tree");
-    // 生成树
     for(int i=1;i<gl_total_node_num;i++)
     {
-        // 进度条
-        if(i%(gl_total_node_num/10+1)==0)
-            printf(".");
+
         
         // 获取最小出现次数的两个符号，并生成新的节点插入符号表
         struct node *sm_left=get_smallest_node(list);
@@ -134,7 +126,6 @@ struct node* generate_tree(struct node* list)
 
         list = insert_node(list,new_node);
     }
-    printf("\n");
     return list;
 }
 // 递归的生成Huffman编码于符号链表
@@ -178,7 +169,6 @@ struct node* free_tree(struct node*list)
 // 参数：符号链表
 void generate_des_file(FILE* sf,FILE* df,struct node*list)
 {
-    printf("generate_des_file");
     // 符号表以文本形式写入到目标文件的前端，解压时需要的信息
     struct node* index=list;
     while(index)
@@ -199,11 +189,7 @@ void generate_des_file(FILE* sf,FILE* df,struct node*list)
     int count=0;
     while(fread(&ch,sizeof(char),1,sf)==1)
     {
-        // 进度条
-        count++;
-        if(count%(gl_source_file_length/10+1)==0)
-            printf(".");
-        
+       
         // 在符号表中找这个字符
         // 没有找到一定是出错了
         struct node *content_node = content_char(list,ch);
@@ -249,7 +235,6 @@ void generate_des_file(FILE* sf,FILE* df,struct node*list)
     }
     // 最后这个一定是一个字符（1-8），表示最后一个有效字符的长度
     fprintf(df,"%d",des_ch_length);
-    printf("\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,9 +244,7 @@ void generate_des_file(FILE* sf,FILE* df,struct node*list)
 // 参数：源文件
 // 返回值：符号表
 struct node* de_get_sym_list(FILE* f)
-{
-    printf("getting sym list...\n");
-    
+{   
     char code[MAX_CODE_LENGTH];
     int ch_int;
     struct node* list=NULL;
@@ -285,9 +268,7 @@ struct node* de_get_sym_list(FILE* f)
 // 参数：目标文件
 // 参数：符号链表
 void de_generate_des_file(FILE* sf,FILE* df,struct node* list)
-{
-    printf("generating des file");
-    
+{    
     char ch;
     // 存储未形成一个有效的Huffman编码的字符串
     char temp_code[MAX_CODE_LENGTH] = {'\0'};
@@ -310,9 +291,6 @@ void de_generate_des_file(FILE* sf,FILE* df,struct node* list)
     // 读取除最后一个字符的所有内容
     for(int i=current_file_index;i<file_length-1;i++)
     {
-        // 进度条
-        if(i%((file_length-current_file_index)/10+1)==0)
-            printf(".");
         // 读取是否成功
         if(fread(&ch,sizeof(char),1,sf)!=1)
         {
@@ -375,7 +353,6 @@ void de_generate_des_file(FILE* sf,FILE* df,struct node* list)
         printf("error:code error.\n");
         exit(0);
     }
-    printf("\n");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // 辅助函数
@@ -449,16 +426,12 @@ struct node* insert_node(struct node *list,struct node *new_node)
 // 参数list：目标链表
 void print_list(struct node *list)
 {
-    printf("All nodes...\n");
     int count=0;
     while(list)
     {
         count++;
-        printf("count:\t %ld \tsym:\t%d\t checked:\t%d\t %s\n"
-                ,list->count,list->sym,list->checked,list->code);
         list=list->next;
     }
-    printf("print node count: %d\n",count);
 }
 // 获取到最小的未被检查的count的节点，返回它的指针，并将其设置为检查过的
 // 参数list_addr：链表头

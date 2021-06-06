@@ -1,54 +1,4 @@
-/* PROG2.C                                                       */
-/* Simple Hashing LZ77 Sliding Dictionary Compression Program    */
-/* By Rich Geldreich, Jr. October, 1993                          */
-/* Originally compiled with QuickC v2.5 in the small model.      */
-/* This program uses more efficient code to delete strings from  */
-/* the sliding dictionary compared to PROG1.C, at the expense of */
-/* greater memory requirements. See the HashData and DeleteData  */
-/* subroutines.                                                  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-/* set this to 1 for a greedy encoder */
-#define GREEDY    0
-
-/* ratio vs. speed constant */
-/* the larger this constant, the better the compression */
-#define MAXCOMPARES 75
-
-/* unused entry flag */
-#define NIL       0xFFFF
-
-/* bits per symbol- normally 8 for general purpose compression */
-#define CHARBITS  8
-
-/* minimum match length & maximum match length */
-#define THRESHOLD 2
-#define MATCHBITS 4
-#define MAXMATCH  ((1 << MATCHBITS) + THRESHOLD - 1)
-
-/* sliding dictionary size and hash table's size */
-/* some combinations of HASHBITS and THRESHOLD values will not work
-   correctly because of the way this program hashes strings */
-#define DICTBITS  13
-#define HASHBITS  10
-#define DICTSIZE  (1 << DICTBITS)
-#define HASHSIZE  (1 << HASHBITS)
-
-/* # bits to shift after each XOR hash */
-/* this constant must be high enough so that only THRESHOLD + 1
-   characters are in the hash accumulator at one time */
-#define SHIFTBITS ((HASHBITS + THRESHOLD) / (THRESHOLD + 1))
-
-/* sector size constants */
-#define SECTORBIT 10
-#define SECTORLEN (1 << SECTORBIT)
-
-#define HASHFLAG1 0x8000
-#define HASHFLAG2 0x7FFF
+#include "lz77.h"
 
 /* dictionary plus MAXMATCH extra chars for string comparisions */
 unsigned char
@@ -68,7 +18,7 @@ unsigned int
   bitsin,
   masks[17] = {0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535};
 
-FILE *infile, *outfile;
+FILE *sou_file, *des_file;
 
 /* writes multiple bit codes to the output stream */
 void SendBits(unsigned int bits, unsigned int numbits)
@@ -80,7 +30,7 @@ void SendBits(unsigned int bits, unsigned int numbits)
 
   if (bitsin > 16)         /* special case when # bits in buffer exceeds 16 */
   {
-    if (putc(bitbuf & 0xFF, outfile) == EOF)
+    if (putc(bitbuf & 0xFF, des_file) == EOF)
     {
       printf("\nerror writing to output file");
       exit(EXIT_FAILURE);
@@ -91,7 +41,7 @@ void SendBits(unsigned int bits, unsigned int numbits)
 
   while (bitsin >= 8)
   {
-    if (putc(bitbuf & 0xFF, outfile) == EOF)
+    if (putc(bitbuf & 0xFF, des_file) == EOF)
     {
       printf("\nerror writing to output file");
       exit(EXIT_FAILURE);
@@ -112,7 +62,7 @@ unsigned int ReadBits(unsigned int numbits)
 
   while (numbits > bitsin)
   {
-    if ((bitbuf = getc(infile)) == EOF)
+    if ((bitbuf = getc(sou_file)) == EOF)
     {
       printf("\nerror reading from input file");
       exit(EXIT_FAILURE);
@@ -161,7 +111,7 @@ unsigned int LoadDict(unsigned int dictpos)
 {
   register unsigned int i, j;
 
-  if ((i = fread(&dict[dictpos], sizeof (char), SECTORLEN, infile)) == EOF)
+  if ((i = fread(&dict[dictpos], sizeof (char), SECTORLEN, sou_file)) == EOF)
   {
     printf("\nerror reading from input file");
     exit(EXIT_FAILURE);
@@ -413,7 +363,7 @@ void Decode (void)
       dict[i++] = ReadBits(CHARBITS);
       if (i == DICTSIZE)
       {
-        if (fwrite(&dict, sizeof (char), DICTSIZE, outfile) == EOF)
+        if (fwrite(&dict, sizeof (char), DICTSIZE, des_file) == EOF)
         {
           printf("\nerror writing to output file");
           exit(EXIT_FAILURE);
@@ -430,7 +380,7 @@ void Decode (void)
 
       if (k == (MAXMATCH + 1))      /* Check for EOF flag */
       {
-        if (fwrite(&dict, sizeof (char), i, outfile) == EOF)
+        if (fwrite(&dict, sizeof (char), i, des_file) == EOF)
         {
           printf("\nerror writing to output file");
           exit(EXIT_FAILURE);
@@ -451,7 +401,7 @@ void Decode (void)
           j &= (DICTSIZE - 1);
           if (i == DICTSIZE)
           {
-            if (fwrite(&dict, sizeof (char), DICTSIZE, outfile) == EOF)
+            if (fwrite(&dict, sizeof (char), DICTSIZE, des_file) == EOF)
             {
               printf("\nerror writing to output file");
               exit(EXIT_FAILURE);
@@ -498,14 +448,14 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
   if ((s = argv[1], s[1] || strpbrk(s, "DEde") == NULL)
-   || (s = argv[2], (infile  = fopen(s, "rb")) == NULL)
-   || (s = argv[3], (outfile = fopen(s, "wb")) == NULL)) {
+   || (s = argv[2], (sou_file  = fopen(s, "rb")) == NULL)
+   || (s = argv[3], (des_file = fopen(s, "wb")) == NULL)) {
     printf("??? %s\n", s);  return EXIT_FAILURE;
   }
 
   /* allocate 4k I/O buffers */
-  setvbuf( infile, NULL, _IOFBF, 4096);
-  setvbuf( outfile, NULL, _IOFBF, 4096);
+  setvbuf( sou_file, NULL, _IOFBF, 4096);
+  setvbuf( des_file, NULL, _IOFBF, 4096);
 
   if (toupper(*argv[1]) == 'E')
   {
@@ -518,7 +468,7 @@ int main(int argc, char *argv[])
     Decode();
   }
 
-  fclose(infile);  fclose(outfile);
+  fclose(sou_file);  fclose(des_file);
 
   return EXIT_SUCCESS;
 }
